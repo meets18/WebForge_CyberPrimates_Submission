@@ -4,3 +4,4 @@ dj-database-url
 gunicorn
 whitenoise
 django-browser-reload
+psycopg2-binary
