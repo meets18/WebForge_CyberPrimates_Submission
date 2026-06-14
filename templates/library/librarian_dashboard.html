@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block title %} - Librarian Dashboard{% endblock %}
+{% block content %}
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="surface rounded-4 p-4 h-100">
+      <div class="muted-copy small text-uppercase">Available</div>
+      <div class="display-6 fw-bold text-success" id="countAvailable">{{ counts.available }}</div>
+      <div class="muted-copy small">Open for check-in.</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="surface rounded-4 p-4 h-100">
+      <div class="muted-copy small text-uppercase">Occupied</div>
+      <div class="display-6 fw-bold text-danger" id="countOccupied">{{ counts.occupied }}</div>
+      <div class="muted-copy small">Currently in use.</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="surface rounded-4 p-4 h-100">
+      <div class="muted-copy small text-uppercase">Away</div>
+      <div class="display-6 fw-bold text-warning" id="countAway">{{ counts.away }}</div>
+      <div class="muted-copy small">On a short break.</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="surface rounded-4 p-4 h-100">
+      <div class="muted-copy small text-uppercase">Abandoned</div>
+      <div class="display-6 fw-bold text-secondary" id="countAbandoned">{{ counts.abandoned }}</div>
+      <div class="muted-copy small">Needs manual reset.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Controls row -->
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <div>
+    <h2 class="h4 mb-0">All Seats</h2>
+    <div class="muted-copy small">Full floor visibility — librarian only. Auto-refreshes every 60 s.</div>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    <a href="/qr-codes/" class="btn btn-soft btn-sm" target="_blank">
+      <i class="bi bi-qr-code me-1"></i>Print QR Codes
+    </a>
+    <span class="muted-copy small" id="refreshCountdown">Refresh in 60s</span>
+  </div>
+</div>
+
+<!-- Desk grid -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+  {% for desk in desks %}
+  <div class="col" data-desk-number="{{ desk.number }}">
+    <div class="card desk-card rounded-4 h-100
+      {% if desk.status == 'available' %}bg-success
+      {% elif desk.status == 'occupied' %}bg-danger
+      {% elif desk.status == 'away' %}bg-warning text-dark
+      {% else %}border border-secondary bg-transparent{% endif %}">
+
+      <div class="card-body d-flex flex-column justify-content-between">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="status-pill opacity-75 {% if desk.status == 'abandoned' %}text-secondary{% endif %}">Desk</div>
+            <div class="h3 mb-0 fw-bold {% if desk.status == 'abandoned' %}text-secondary{% endif %}">
+              {{ desk.number }}
+            </div>
+          </div>
+          <div class="d-flex flex-column align-items-end gap-1 badge-wrapper">
+            <div class="badge
+              {% if desk.status == 'away' %}bg-dark text-warning
+              {% elif desk.status == 'occupied' %}bg-light text-danger
+              {% elif desk.status == 'abandoned' %}bg-secondary
+              {% else %}bg-light text-success{% endif %}">
+              {{ desk.status|title }}
+            </div>
+            {% if desk.presence_verified %}
+              <div class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Verified</div>
+            {% elif desk.notice_kind == "warning" %}
+              <div class="badge bg-warning text-dark"><i class="bi bi-bell-fill me-1"></i>Check sent</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Detail info -->
+        <div class="small mb-3 desk-details-text {% if desk.status == 'abandoned' %}text-secondary{% else %}opacity-90{% endif %}">
+          {% if desk.status == "available" %}
+            <span>Open for check-in.</span>
+          {% elif desk.status == "occupied" %}
+            {% if desk.logout_release_remaining_seconds > 0 %}
+              <div class="mb-2 text-warning fw-semibold">
+                <i class="bi bi-exclamation-triangle-fill me-1 animate-pulse"></i>Logout Pending Release: <span class="logout-timer" data-seconds="{{ desk.logout_release_remaining_seconds }}">{{ desk.logout_release_remaining }}</span>
+              </div>
+            {% endif %}
+            <div class="mb-1">Remaining: <strong>{{ desk.time_remaining }}</strong></div>
+            {% if desk.occupied_by %}<div class="mb-1"><i class="bi bi-person me-1"></i><strong>{{ desk.occupied_by }}</strong></div>{% endif %}
+            {% if desk.occupied_by_card %}<div class="mb-1"><i class="bi bi-credit-card me-1"></i><code class="small">{{ desk.occupied_by_card }}</code></div>{% endif %}
+            {% if desk.purpose %}<div class="mb-1"><i class="bi bi-book me-1"></i>{{ desk.purpose }}</div>{% endif %}
+            {% if desk.approximate_time %}<div><i class="bi bi-clock me-1"></i>Planned: {{ desk.approximate_time }}</div>{% endif %}
+          {% elif desk.status == "away" %}
+            {% if desk.logout_release_remaining_seconds > 0 %}
+              <div class="mb-2 text-warning fw-semibold">
+                <i class="bi bi-exclamation-triangle-fill me-1 animate-pulse"></i>Logout Pending Release: <span class="logout-timer" data-seconds="{{ desk.logout_release_remaining_seconds }}">{{ desk.logout_release_remaining }}</span>
+              </div>
+            {% endif %}
+            <div class="mb-1">Away. Returns in: <strong>{{ desk.away_remaining }}</strong></div>
+            {% if desk.occupied_by %}<div class="mb-1"><i class="bi bi-person me-1"></i><strong>{{ desk.occupied_by }}</strong></div>{% endif %}
+            {% if desk.purpose %}<div><i class="bi bi-book me-1"></i>{{ desk.purpose }}</div>{% endif %}
+          {% else %}
+            <!-- Abandoned -->
+            <div class="mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i><strong>Session expired</strong></div>
+            {% if desk.occupied_by %}<div class="mb-1"><i class="bi bi-person me-1"></i>{{ desk.occupied_by }}</div>{% endif %}
+            {% if desk.occupied_by_card %}<div><i class="bi bi-credit-card me-1"></i><code class="small">{{ desk.occupied_by_card }}</code></div>{% endif %}
+          {% endif %}
+        </div>
+
+        <!-- Action buttons -->
+        <div class="d-flex flex-wrap gap-2 action-wrapper">
+          {% if desk.status == "abandoned" %}
+            <!-- Prominent reset for abandoned desks -->
+            <button type="button" class="btn btn-sm btn-warning w-100 fw-semibold"
+                    data-confirm-url="/desk/{{ desk.number }}/reset/"
+                    data-confirm-title="Reset abandoned desk {{ desk.number }}?"
+                    data-confirm-message="This will mark the desk as available again."
+                    data-confirm-button="Reset Desk"
+                    data-confirm-button-class="btn-warning">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Desk
+            </button>
+          {% elif desk.status == "available" %}
+            <span class="btn btn-sm btn-outline-dark disabled opacity-50">Verify Presence</span>
+            <span class="btn btn-sm btn-outline-light disabled opacity-50">Release</span>
+          {% else %}
+            {% if desk.logout_release_remaining_seconds > 0 %}
+              <form method="post" action="/desk/{{ desk.number }}/cancel-release/" class="d-inline m-0 flex-grow-1">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-warning w-100 fw-semibold">
+                  Cancel Release
+                </button>
+              </form>
+              <button type="button" class="btn btn-sm btn-outline-light flex-grow-1"
+                      data-confirm-url="/desk/{{ desk.number }}/checkout/"
+                      data-confirm-title="Release desk {{ desk.number }}?"
+                      data-confirm-message="The desk will be set back to available."
+                      data-confirm-button="Release Desk"
+                      data-confirm-button-class="btn-warning"
+                      data-needs-reason="true">
+                Release
+              </button>
+            {% else %}
+              <a href="/desk/{{ desk.number }}/verify/" class="btn btn-sm btn-outline-dark">
+                <i class="bi bi-bell me-1"></i>Verify
+              </a>
+              <button type="button" class="btn btn-sm btn-outline-light"
+                      data-confirm-url="/desk/{{ desk.number }}/checkout/"
+                      data-confirm-title="Release desk {{ desk.number }}?"
+                      data-confirm-message="The desk will be set back to available."
+                      data-confirm-button="Release Desk"
+                      data-confirm-button-class="btn-warning"
+                      data-needs-reason="true">
+                Release
+              </button>
+            {% endif %}
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Auto-refresh countdown script -->
+<script>
+(function () {
+  const el = document.getElementById('refreshCountdown');
+  if (el) el.textContent = 'Live updates active';
+
+  function updateDashboard() {
+    fetch('/api/desks/', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data || !data.desks) return;
+
+        // Update counts
+        const countAvailable = document.getElementById('countAvailable');
+        const countOccupied = document.getElementById('countOccupied');
+        const countAway = document.getElementById('countAway');
+        const countAbandoned = document.getElementById('countAbandoned');
+        if (data.counts) {
+          if (countAvailable) countAvailable.textContent = data.counts.available;
+          if (countOccupied) countOccupied.textContent = data.counts.occupied;
+          if (countAway) countAway.textContent = data.counts.away;
+          if (countAbandoned) countAbandoned.textContent = data.counts.abandoned;
+        }
+
+        data.desks.forEach(desk => {
+          const col = document.querySelector(`[data-desk-number="${desk.number}"]`);
+          if (!col) return;
+
+          const card = col.querySelector('.card');
+          const badgeWrapper = col.querySelector('.badge-wrapper');
+          const detailsText = col.querySelector('.desk-details-text');
+          const actionWrapper = col.querySelector('.action-wrapper');
+
+          // Update Card class
+          if (card) {
+            card.className = 'card desk-card rounded-4 h-100';
+            if (desk.status === 'available') {
+              card.classList.add('bg-success');
+            } else if (desk.status === 'occupied') {
+              card.classList.add('bg-danger');
+            } else if (desk.status === 'away') {
+              card.classList.add('bg-warning', 'text-dark');
+            } else {
+              card.classList.add('border', 'border-secondary', 'bg-transparent');
+            }
+          }
+
+          // Update badges
+          if (badgeWrapper) {
+            let badgesHtml = '';
+            let badgeClass = 'bg-light text-success';
+            if (desk.status === 'away') {
+              badgeClass = 'bg-dark text-warning';
+            } else if (desk.status === 'occupied') {
+              badgeClass = 'bg-light text-danger';
+            } else if (desk.status === 'abandoned') {
+              badgeClass = 'bg-secondary';
+            }
+            const statusTitle = desk.status.charAt(0).toUpperCase() + desk.status.slice(1);
+            badgesHtml += `<div class="badge ${badgeClass}">${statusTitle}</div>`;
+
+            if (desk.presence_verified) {
+              badgesHtml += `<div class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Verified</div>`;
+            } else if (desk.notice_kind === 'warning') {
+              badgesHtml += `<div class="badge bg-warning text-dark"><i class="bi bi-bell-fill me-1"></i>Check sent</div>`;
+            }
+            badgeWrapper.innerHTML = badgesHtml;
+          }
+
+          // Update details
+          if (detailsText) {
+            let detailsHtml = '';
+            if (desk.status === 'abandoned') {
+              detailsText.className = 'small mb-3 desk-details-text text-secondary';
+            } else {
+              detailsText.className = 'small mb-3 desk-details-text opacity-90';
+            }
+
+            if (desk.status === 'available') {
+              detailsHtml = '<span>Open for check-in.</span>';
+            } else if (desk.status === 'occupied') {
+              if (desk.logout_release_remaining_seconds > 0) {
+                detailsHtml += `
+                  <div class="mb-2 text-warning fw-semibold">
+                    <i class="bi bi-exclamation-triangle-fill me-1 animate-pulse"></i>Logout Pending Release: <span class="logout-timer" data-seconds="${desk.logout_release_remaining_seconds}">${desk.logout_release_remaining}</span>
+                  </div>
+                `;
+              }
+              detailsHtml += `<div class="mb-1">Remaining: <strong>${desk.time_remaining}</strong></div>`;
+              if (desk.occupied_by) {
+                detailsHtml += `<div class="mb-1"><i class="bi bi-person me-1"></i><strong>${desk.occupied_by}</strong></div>`;
+              }
+              if (desk.occupied_by_card) {
+                detailsHtml += `<div class="mb-1"><i class="bi bi-credit-card me-1"></i><code class="small">${desk.occupied_by_card}</code></div>`;
+              }
+              if (desk.purpose) {
+                detailsHtml += `<div class="mb-1"><i class="bi bi-book me-1"></i>${desk.purpose}</div>`;
+              }
+              if (desk.approximate_time) {
+                detailsHtml += `<div><i class="bi bi-clock me-1"></i>Planned: ${desk.approximate_time}</div>`;
+              }
+            } else if (desk.status === 'away') {
+              if (desk.logout_release_remaining_seconds > 0) {
+                detailsHtml += `
+                  <div class="mb-2 text-warning fw-semibold">
+                    <i class="bi bi-exclamation-triangle-fill me-1 animate-pulse"></i>Logout Pending Release: <span class="logout-timer" data-seconds="${desk.logout_release_remaining_seconds}">${desk.logout_release_remaining}</span>
+                  </div>
+                `;
+              }
+              detailsHtml += `<div class="mb-1">Away. Returns in: <strong>${desk.away_remaining}</strong></div>`;
+              if (desk.occupied_by) {
+                detailsHtml += `<div class="mb-1"><i class="bi bi-person me-1"></i><strong>${desk.occupied_by}</strong></div>`;
+              }
+              if (desk.purpose) {
+                detailsHtml += `<div><i class="bi bi-book me-1"></i>${desk.purpose}</div>`;
+              }
+            } else {
+              // Abandoned
+              detailsHtml += `<div class="mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i><strong>Session expired</strong></div>`;
+              if (desk.occupied_by) {
+                detailsHtml += `<div class="mb-1"><i class="bi bi-person me-1"></i>${desk.occupied_by}</div>`;
+              }
+              if (desk.occupied_by_card) {
+                detailsHtml += `<div><i class="bi bi-credit-card me-1"></i><code class="small">${desk.occupied_by_card}</code></div>`;
+              }
+            }
+            detailsText.innerHTML = detailsHtml;
+          }
+
+          // Update action buttons
+          if (actionWrapper) {
+            let actionsHtml = '';
+            if (desk.status === 'abandoned') {
+              actionsHtml = `
+                <button type="button" class="btn btn-sm btn-warning w-100 fw-semibold"
+                        data-confirm-url="/desk/${desk.number}/reset/"
+                        data-confirm-title="Reset abandoned desk ${desk.number}?"
+                        data-confirm-message="This will mark the desk as available again."
+                        data-confirm-button="Reset Desk"
+                        data-confirm-button-class="btn-warning">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Desk
+                </button>
+              `;
+            } else if (desk.status === 'available') {
+              actionsHtml = `
+                <span class="btn btn-sm btn-outline-dark disabled opacity-50">Verify Presence</span>
+                <span class="btn btn-sm btn-outline-light disabled opacity-50">Release</span>
+              `;
+            } else {
+              if (desk.logout_release_remaining_seconds > 0) {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                actionsHtml = `
+                  <form method="post" action="/desk/${desk.number}/cancel-release/" class="d-inline m-0 flex-grow-1">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <button type="submit" class="btn btn-sm btn-warning w-100 fw-semibold">
+                      Cancel Release
+                    </button>
+                  </form>
+                  <button type="button" class="btn btn-sm btn-outline-light flex-grow-1"
+                          data-confirm-url="/desk/${desk.number}/checkout/"
+                          data-confirm-title="Release desk ${desk.number}?"
+                          data-confirm-message="The desk will be set back to available."
+                          data-confirm-button="Release Desk"
+                          data-confirm-button-class="btn-warning"
+                          data-needs-reason="true">
+                    Release
+                  </button>
+                `;
+              } else {
+                actionsHtml = `
+                  <a href="/desk/${desk.number}/verify/" class="btn btn-sm btn-outline-dark">
+                    <i class="bi bi-bell me-1"></i>Verify
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-light"
+                          data-confirm-url="/desk/${desk.number}/checkout/"
+                          data-confirm-title="Release desk ${desk.number}?"
+                          data-confirm-message="The desk will be set back to available."
+                          data-confirm-button="Release Desk"
+                          data-confirm-button-class="btn-warning"
+                          data-needs-reason="true">
+                    Release
+                  </button>
+                `;
+              }
+            }
+            actionWrapper.innerHTML = actionsHtml;
+          }
+        });
+      })
+      .catch(err => console.error("Dashboard refresh error:", err));
+  }
+
+  // Poll dashboard every 5 seconds for live update (hot-reload)
+  setInterval(updateDashboard, 5000);
+
+  // Live ticker for logout countdown timers
+  setInterval(function() {
+    document.querySelectorAll('.logout-timer').forEach(el => {
+      let seconds = parseInt(el.getAttribute('data-seconds'));
+      if (isNaN(seconds) || seconds <= 0) {
+        el.textContent = "0m 00s";
+        return;
+      }
+      seconds--;
+      el.setAttribute('data-seconds', seconds);
+      
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      el.textContent = `${m}m ${s.toString().padStart(2, '0')}s`;
+    });
+  }, 1000);
+})();
+</script>
+{% endblock %}

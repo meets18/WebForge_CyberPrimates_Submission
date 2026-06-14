@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} - Welcome{% endblock %}
+{% block headline %}DeskGuard{% endblock %}
+{% block content_bare %}
+<div class="d-flex align-items-center justify-content-center min-vh-100">
+  <div class="text-center splash-enter" style="max-width: 760px;">
+    <div class="surface rounded-5 p-3 p-md-4 p-lg-4 mx-auto shadow-lg" style="max-width: 520px;">
+      <img
+        src="{% static 'images/deskguard-landing.png' %}"
+        alt="DeskGuard illustration"
+        class="img-fluid rounded-5 d-block mx-auto"
+        style="max-width: 100%;"
+      >
+    </div>
+    <h1 class="display-5 fw-bold mt-4 mb-3">DeskGuard</h1>
+    <div class="d-inline-flex align-items-center gap-3">
+      <div class="spinner-border text-warning" role="status" aria-label="Loading">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="fw-semibold">Loading</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  setTimeout(function () {
+    window.location.href = "/login/";
+  }, 2600);
+</script>
+{% endblock content_bare %}

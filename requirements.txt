@@ -1,0 +1,5 @@
+Django>=5.0,<6.0
+qrcode[pil]
+dj-database-url
+gunicorn
+whitenoise

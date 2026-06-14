@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %} - Take Break{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="surface rounded-4 p-4 p-lg-5">
+      <h2 class="display-6 fw-bold mb-2">Take a Break</h2>
+      <p class="muted-copy mb-4">Set a break duration for desk {{ desk.number }}.</p>
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-8">
+          <label class="form-label">Break Duration in Minutes</label>
+          <input name="break_minutes" type="number" min="1" max="20" class="form-control" required>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button class="btn btn-warning w-100" type="submit">Start Break</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

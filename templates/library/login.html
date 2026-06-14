@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %} - Login{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7 col-xl-6">
+    <div class="surface rounded-4 p-4 p-lg-5">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+          <div class="text-uppercase small text-secondary mb-1">Welcome back</div>
+          <h2 class="display-6 fw-bold mb-0">Sign in</h2>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="alert alert-danger d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="post" class="row g-3" id="loginForm">
+        {% csrf_token %}
+
+        <!-- Role selector -->
+        <div class="col-12">
+          <label class="form-label">Sign in as</label>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-soft flex-fill role-btn active-role"
+                    data-role="student">
+              <i class="bi bi-person-fill me-1"></i>Student
+            </button>
+            <button type="button" class="btn btn-soft flex-fill role-btn"
+                    data-role="librarian">
+              <i class="bi bi-shield-lock-fill me-1"></i>Librarian
+            </button>
+          </div>
+          <input type="hidden" name="role" id="roleInput" value="student">
+        </div>
+
+        <!-- Card number (both roles, placeholder changes) -->
+        <div class="col-12">
+          <label class="form-label">Library Card Number</label>
+          <input name="card_number" id="cardInput" class="form-control form-control-lg"
+                 placeholder="WF-26-XXXX"
+                 value="{{ prefill_card|default:'' }}"
+                 autocomplete="username" required>
+          <div class="form-text muted-copy" id="cardHint">
+            Issued after registration — format WF-YY-XXXX.
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="col-12">
+          <label class="form-label">Password</label>
+          <div class="input-group input-group-lg">
+            <input name="password" type="password" id="passwordInput"
+                   class="form-control" placeholder="Enter your password"
+                   autocomplete="current-password" required>
+            <button class="btn btn-soft" type="button" id="togglePwd" tabindex="-1">
+              <i class="bi bi-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+          <button class="btn btn-success btn-lg px-5" type="submit" id="submitBtn">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+          </button>
+          <a class="btn btn-outline-light btn-lg" href="/register/">Register</a>
+          <a class="btn btn-link text-warning ms-1" href="/forgot-password/">Forgot password?</a>
+        </div>
+      </form>
+
+      <!-- Test credentials hint (dev only) -->
+      <div class="mt-4 p-3 rounded-3" style="background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.12);">
+        <div class="small muted-copy mb-1"><i class="bi bi-info-circle me-1"></i><strong>Demo credentials</strong></div>
+        <div class="small muted-copy">Student: <code>WF-26-0001</code> / <code>iron</code></div>
+        <div class="small muted-copy">Librarian: <code>WF-26-LB01</code> / <code>librarian123</code></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .active-role {
+    background: rgba(255,255,255,0.14) !important;
+    border-color: rgba(255,255,255,0.35) !important;
+    color: #fff !important;
+  }
+  [data-theme="light"] .active-role {
+    background: rgba(109,86,166,0.14) !important;
+    border-color: rgba(109,86,166,0.45) !important;
+    color: #3b2d6e !important;
+  }
+</style>
+
+<script>
+  (function () {
+    const roleInput = document.getElementById('roleInput');
+    const cardInput = document.getElementById('cardInput');
+    const cardHint  = document.getElementById('cardHint');
+    const submitBtn = document.getElementById('submitBtn');
+    const pwdInput  = document.getElementById('passwordInput');
+    const eyeIcon   = document.getElementById('eyeIcon');
+    const togglePwd = document.getElementById('togglePwd');
+
+    const hints = {
+      student:   'Issued after registration — format WF-YY-XXXX.',
+      librarian: 'Librarian card is WF-26-LB01.',
+    };
+    const placeholders = {
+      student:   'WF-26-XXXX',
+      librarian: 'WF-26-LB01',
+    };
+
+    document.querySelectorAll('.role-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active-role'));
+        btn.classList.add('active-role');
+        const role = btn.dataset.role;
+        roleInput.value       = role;
+        cardInput.placeholder = placeholders[role];
+        cardHint.textContent  = hints[role];
+        submitBtn.innerHTML   = role === 'librarian'
+          ? '<i class="bi bi-shield-lock-fill me-1"></i>Admin Sign In'
+          : '<i class="bi bi-box-arrow-in-right me-1"></i>Sign In';
+      });
+    });
+
+    togglePwd.addEventListener('click', function () {
+      const show = pwdInput.type === 'password';
+      pwdInput.type = show ? 'text' : 'password';
+      eyeIcon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+  })();
+</script>
+{% endblock %}

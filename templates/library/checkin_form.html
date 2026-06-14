@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %} - Check In{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="surface rounded-4 p-4 p-lg-5">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+          <div class="text-uppercase small text-secondary mb-1">Check In</div>
+          <h2 class="display-6 fw-bold mb-0">Desk {{ desk.number }}</h2>
+        </div>
+        <span class="badge {% if desk.status == 'available' %}bg-success{% else %}bg-secondary{% endif %} rounded-pill px-3 py-2">{{ desk.status|title }}</span>
+      </div>
+
+      {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-6">
+          <label class="form-label">Who are you?</label>
+          <input name="who_are_you" class="form-control form-control-lg" value="{{ prefill_name }}" placeholder="Aarav Mehta" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Approximate time in library</label>
+          <input name="approximate_time" class="form-control form-control-lg" placeholder="90 minutes" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Purpose</label>
+          <textarea name="purpose" class="form-control" rows="4" placeholder="Studying for exams, assignment work, group prep..."></textarea>
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+          <button class="btn btn-success btn-lg px-4" type="submit">Continue to Desk</button>
+          <a class="btn btn-outline-light btn-lg" href="/student/">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

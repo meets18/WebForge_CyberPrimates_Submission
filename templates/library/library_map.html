@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block title %} - Library Map{% endblock %}
+{% block content %}
+<!-- Stats row: matches librarian dashboard style -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="surface rounded-4 p-3 h-100">
+      <div class="text-uppercase small text-secondary mb-2">{{ page_badge|default:"Live Library Map" }}</div>
+      <h2 class="h4 mb-1">{{ page_title|default:"Find a desk" }}</h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="surface rounded-4 p-4 h-100">
+      <div class="muted-copy small text-uppercase">Occupied</div>
+      <div class="display-6 fw-bold">{{ counts.occupied }}</div>
+      <div class="muted-copy small">Currently in use.</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="surface rounded-4 p-4 h-100">
+      <div class="muted-copy small text-uppercase">Away</div>
+      <div class="display-6 fw-bold">{{ counts.away }}</div>
+      <div class="muted-copy small">Temporarily paused.</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="surface rounded-4 p-4 h-100">
+      <div class="muted-copy small text-uppercase">Available</div>
+      <div class="display-6 fw-bold">{{ counts.available }}</div>
+      <div class="muted-copy small">Open for students.</div>
+    </div>
+  </div>
+</div>
+
+{% if current_role == "student" and not assigned_desk_number %}
+<!-- Student instruction tip -->
+<div class="surface rounded-4 px-4 py-3 mb-4 d-flex align-items-center gap-3">
+  <i class="bi bi-info-circle-fill fs-5 text-info flex-shrink-0"></i>
+  <span class="small">
+    <strong>Green seats are available.</strong>
+    Tap any green desk card below to reserve it and complete a quick check-in.
+    Yellow means the student is on a short break — red seats are fully occupied.
+  </span>
+</div>
+{% endif %}
+
+
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3" id="desksGrid">
+  {% for desk in desks %}
+  <div class="col" data-desk-number="{{ desk.number }}">
+    <a data-desk-link="{{ desk.number }}"
+       href="{% if current_role == 'librarian' %}/desk/{{ desk.number }}/{% elif desk.number == assigned_desk_number and desk.status != 'available' and desk.status != 'abandoned' %}/session/{% elif desk.status == 'available' %}/checkin/{{ desk.number }}/{% else %}#{% endif %}"
+       class="text-decoration-none text-reset
+         {% if current_role != 'librarian' %}
+           {% if assigned_desk_number and desk.status != 'available' and desk.status != 'abandoned' %}
+             {% if desk.number != assigned_desk_number %}pe-none{% endif %}
+           {% else %}
+             {% if desk.status != 'available' %}pe-none{% endif %}
+           {% endif %}
+         {% endif %}">
+      <div class="card desk-card rounded-4 h-100 
+           {% if desk.number == assigned_desk_number and desk.status != 'available' and desk.status != 'abandoned' %}
+             bg-dark border border-primary border-3 shadow-lg position-relative
+           {% elif desk.status == 'available' %}
+             bg-success
+           {% elif desk.status == 'occupied' %}
+             bg-danger
+           {% else %}
+             bg-warning text-dark
+           {% endif %}"
+           {% if desk.number == assigned_desk_number and desk.status != 'available' and desk.status != 'abandoned' %}style="box-shadow: 0 0 15px rgba(13, 110, 253, 0.4) !important;"{% endif %}>
+        <div class="card-body d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              {% if current_role == "student" %}
+              <!-- Desk icon: outline stroke style matching reference -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none"
+                   stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"
+                   viewBox="0 0 100 80" class="mb-1 opacity-90" aria-hidden="true">
+                <!-- tabletop -->
+                <rect x="4" y="8" width="92" height="10" rx="2"/>
+                <!-- left leg -->
+                <line x1="11" y1="18" x2="11" y2="72"/>
+                <!-- foot -->
+                <line x1="4"  y1="72" x2="22" y2="72"/>
+                <!-- drawer pedestal -->
+                <rect x="57" y="18" width="36" height="54" rx="2"/>
+                <!-- drawer dividers -->
+                <line x1="57" y1="35" x2="93" y2="35"/>
+                <line x1="57" y1="52" x2="93" y2="52"/>
+                <!-- drawer handles (dots) -->
+                <circle cx="75" cy="26.5" r="2.5" fill="currentColor" stroke="none"/>
+                <circle cx="75" cy="43.5" r="2.5" fill="currentColor" stroke="none"/>
+                <circle cx="75" cy="60.5" r="2.5" fill="currentColor" stroke="none"/>
+              </svg>
+              {% endif %}
+              <div class="status-pill opacity-75">Desk</div>
+              <div class="h3 mb-1 fw-bold">{{ desk.number }}</div>
+            </div>
+            <div class="badge-wrapper">
+              {% if desk.number == assigned_desk_number and desk.status != 'available' and desk.status != 'abandoned' %}
+                <div class="badge bg-primary text-white py-2 px-3 rounded-pill shadow-sm animate-pulse">
+                  <i class="bi bi-person-circle me-1"></i>Your Seat
+                </div>
+              {% else %}
+                <div class="badge {% if desk.status == 'away' %}bg-dark text-warning{% elif desk.status == 'occupied' %}bg-light text-danger{% else %}bg-light text-success{% endif %}">
+                  {{ desk.status|title }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="mt-3 small opacity-90 desk-card-text">
+            {% if desk.status == "available" %}
+              Tap to check in.
+            {% elif current_role == "student" %}
+              {% if desk.number == assigned_desk_number and desk.status != 'abandoned' %}
+                <strong>Your active session. Tap to manage.</strong>
+              {% else %}
+                Occupied seat.
+              {% endif %}
+            {% else %}
+              {% if desk.status == "occupied" %}
+                Occupied now. Time remaining: {{ desk.time_remaining }}.
+              {% else %}
+                Away mode active. Returning in {{ desk.away_remaining }}.
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Live hot-reload/polling map update script ── -->
+<script>
+(function () {
+  const currentRole = "{{ current_role }}";
+  let assignedDeskNumber = "{{ assigned_desk_number|default:'' }}";
+
+  function updateMap() {
+    fetch('/api/desks/', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data || !data.desks) return;
+
+        if ('assigned_desk_number' in data) {
+          assignedDeskNumber = data.assigned_desk_number || '';
+        }
+
+        const hasActiveDesk = assignedDeskNumber && data.desks.some(d => d.number === assignedDeskNumber && d.status !== 'available' && d.status !== 'abandoned');
+
+        data.desks.forEach(desk => {
+          const col = document.querySelector(`[data-desk-number="${desk.number}"]`);
+          if (!col) return;
+
+          const link = col.querySelector('[data-desk-link]');
+          const card = col.querySelector('.card');
+          const badgeWrapper = col.querySelector('.badge-wrapper');
+          const textEl = col.querySelector('.desk-card-text');
+
+          const isAssigned = desk.number === assignedDeskNumber && desk.status !== 'available' && desk.status !== 'abandoned';
+
+          // Update link behavior
+          if (link) {
+            let href = '#';
+            let peNone = true;
+            if (currentRole === 'librarian') {
+              href = `/desk/${desk.number}/`;
+              peNone = false;
+            } else if (hasActiveDesk) {
+              if (isAssigned) {
+                href = '/session/';
+                peNone = false;
+              } else {
+                href = '#';
+                peNone = true;
+              }
+            } else {
+              if (desk.status === 'available') {
+                href = `/checkin/${desk.number}/`;
+                peNone = false;
+              } else {
+                href = '#';
+                peNone = true;
+              }
+            }
+            link.setAttribute('href', href);
+            if (peNone) {
+              link.classList.add('pe-none');
+            } else {
+              link.classList.remove('pe-none');
+            }
+          }
+
+          // Update Card CSS classes
+          if (card) {
+            card.className = 'card desk-card rounded-4 h-100';
+            if (isAssigned) {
+              card.classList.add('bg-dark', 'border', 'border-primary', 'border-3', 'shadow-lg', 'position-relative');
+              card.style.boxShadow = '0 0 15px rgba(13, 110, 253, 0.4)';
+            } else if (desk.status === 'available') {
+              card.classList.add('bg-success');
+              card.style.boxShadow = '';
+            } else if (desk.status === 'occupied') {
+              card.classList.add('bg-danger');
+              card.style.boxShadow = '';
+            } else {
+              card.classList.add('bg-warning', 'text-dark');
+              card.style.boxShadow = '';
+            }
+          }
+
+          // Update Badge inside the wrapper
+          if (badgeWrapper) {
+            if (isAssigned) {
+              badgeWrapper.innerHTML = `
+                <div class="badge bg-primary text-white py-2 px-3 rounded-pill shadow-sm animate-pulse">
+                  <i class="bi bi-person-circle me-1"></i>Your Seat
+                </div>
+              `;
+            } else {
+              let badgeClass = 'bg-light text-success';
+              if (desk.status === 'away') {
+                badgeClass = 'bg-dark text-warning';
+              } else if (desk.status === 'occupied') {
+                badgeClass = 'bg-light text-danger';
+              } else if (desk.status === 'abandoned') {
+                badgeClass = 'bg-secondary';
+              }
+              const title = desk.status.charAt(0).toUpperCase() + desk.status.slice(1);
+              badgeWrapper.innerHTML = `
+                <div class="badge ${badgeClass}">
+                  ${title}
+                </div>
+              `;
+            }
+          }
+
+          // Update Card Description Text
+          if (textEl) {
+            if (desk.status === 'available') {
+              textEl.innerHTML = 'Tap to check in.';
+            } else if (currentRole === 'student') {
+              if (isAssigned) {
+                textEl.innerHTML = '<strong>Your active session. Tap to manage.</strong>';
+              } else {
+                textEl.innerHTML = 'Occupied seat.';
+              }
+            } else {
+              if (desk.status === 'occupied') {
+                textEl.textContent = `Occupied now. Time remaining: ${desk.time_remaining}.`;
+              } else if (desk.status === 'abandoned') {
+                textEl.textContent = 'Session expired';
+              } else {
+                textEl.textContent = `Away mode active. Returning in ${desk.away_remaining}.`;
+              }
+            }
+          }
+        });
+      })
+      .catch(err => console.error("Map refresh error:", err));
+  }
+
+  // Poll map every 5 seconds for live update (hot-reload)
+  setInterval(updateMap, 5000);
+})();
+</script>
+{% endblock %}

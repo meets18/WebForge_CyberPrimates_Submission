@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %} - Register{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
+    <div class="surface rounded-4 p-4 p-lg-5">
+      <div class="text-uppercase small text-secondary mb-2">New Student Account</div>
+      <h2 class="display-6 fw-bold mb-1">Register for DeskGuard</h2>
+      <p class="muted-copy mb-4">
+        Fill in your details. Your library card number (<strong>WF-YY-XXXX</strong>) will be
+        auto-generated and shown to you after registration — save it, as you'll need it to log in.
+      </p>
+
+      {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-6">
+          <label class="form-label">Full Name</label>
+          <input name="full_name" class="form-control form-control-lg"
+                 placeholder="Aarav Mehta" required value="{{ pf_full_name|default:'' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Email Address</label>
+          <input name="email" type="email" class="form-control form-control-lg"
+                 placeholder="aarav@college.edu" required value="{{ pf_email|default:'' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Phone Number</label>
+          <input name="phone" class="form-control form-control-lg"
+                 placeholder="9876543210" required value="{{ pf_phone|default:'' }}">
+          <div class="form-text muted-copy">10-digit Indian mobile (6–9 start). +91 / 0 prefix optional.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">College / Institution Name</label>
+          <input name="college_name" class="form-control form-control-lg"
+                 placeholder="City Institute of Technology" required value="{{ pf_college_name|default:'' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">College ID / Enrollment Number</label>
+          <input name="college_id" class="form-control form-control-lg"
+                 placeholder="26CTE007" required value="{{ pf_college_id|default:'' }}"
+                 style="text-transform:uppercase;">
+          <div class="form-text muted-copy">
+            Format: <strong>yyCTExxx</strong> — year (22–26) + CTE + roll (001–010).
+            <br>Example: <code>26CTE007</code>, <code>24CTE010</code>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <!-- spacer -->
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Password</label>
+          <input name="password" type="password" class="form-control form-control-lg"
+                 placeholder="Min 8 chars" required>
+          <div class="form-text muted-copy">
+            Must have uppercase, lowercase, a number, and a special character.
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Confirm Password</label>
+          <input name="confirm_password" type="password" class="form-control form-control-lg"
+                 placeholder="Re-enter password" required>
+        </div>
+        <div class="col-12">
+          <div class="p-3 rounded-3" style="background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.25);">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-info-circle-fill text-warning"></i>
+              <span class="small"><strong>Note:</strong> After registration, you will receive your
+              library card number (<code>WF-YY-XXXX</code>). Keep it safe — you'll need it every time you log in.</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+          <button class="btn btn-success btn-lg px-5" type="submit">Create Account</button>
+          <a class="btn btn-outline-light btn-lg" href="/login/">Back to Login</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

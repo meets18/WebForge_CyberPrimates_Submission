@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %} - Registration Successful{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7 col-xl-6">
+    <div class="surface rounded-4 p-4 p-lg-5 text-center">
+
+      <!-- Success icon -->
+      <div class="mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+             style="width:72px;height:72px;background:rgba(25,135,84,0.18);border:2px solid rgba(25,135,84,0.4);">
+          <i class="bi bi-patch-check-fill text-success" style="font-size:2rem;"></i>
+        </div>
+        <h2 class="display-6 fw-bold mb-1">You're registered!</h2>
+        <p class="muted-copy">Welcome to DeskGuard, {{ full_name }}.</p>
+      </div>
+
+      <!-- Card number display -->
+      <div class="p-4 rounded-4 mb-4"
+           style="background:linear-gradient(135deg,rgba(255,193,7,0.18),rgba(255,193,7,0.06));
+                  border:1.5px solid rgba(255,193,7,0.35);">
+        <div class="text-uppercase small text-warning fw-semibold mb-2 letter-spacing-1">
+          Your Library Card Number
+        </div>
+        <div class="display-5 fw-bold font-monospace tracking-wide mb-3" id="cardNumberDisplay">
+          {{ card_number }}
+        </div>
+        <button class="btn btn-sm btn-warning px-4" onclick="copyCard()" id="copyBtn">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
+      </div>
+
+      <!-- Simulated email notice -->
+      <div class="alert d-flex align-items-start gap-3 text-start mb-4"
+           style="background:rgba(13,202,240,0.1);border:1px solid rgba(13,202,240,0.25);color:inherit;">
+        <i class="bi bi-envelope-check-fill text-info mt-1 flex-shrink-0"></i>
+        <div class="small">
+          <strong>Email simulated</strong> — In a production deployment this card number would
+          be sent to <strong>{{ masked_email }}</strong>. For this demo, please copy and save it now.
+        </div>
+      </div>
+
+      <div class="d-grid gap-2">
+        <a href="/login/" class="btn btn-success btn-lg">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Log in with your card number
+        </a>
+        <p class="muted-copy small mt-2 mb-0">
+          Use <strong>{{ card_number }}</strong> + your password to log in.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyCard() {
+    const num = document.getElementById('cardNumberDisplay').textContent.trim();
+    navigator.clipboard.writeText(num).then(function () {
+      const btn = document.getElementById('copyBtn');
+      btn.innerHTML = '<i class="bi bi-clipboard-check me-1"></i>Copied!';
+      btn.classList.replace('btn-warning', 'btn-success');
+      setTimeout(() => {
+        btn.innerHTML = '<i class="bi bi-clipboard me-1"></i>Copy';
+        btn.classList.replace('btn-success', 'btn-warning');
+      }, 2500);
+    });
+  }
+</script>
+{% endblock %}

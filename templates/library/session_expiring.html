@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %} - Session Expiring{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="surface rounded-4 p-4 p-lg-5 text-center">
+      <div class="display-4 mb-3">!</div>
+      <h2 class="display-6 fw-bold">Session Expiring</h2>
+      <p class="lead mb-1">Only {{ warning_minutes }} minutes remain.</p>
+      <p class="muted-copy mb-4">Are you still using desk {{ desk.number }}?</p>
+      <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+        {% if current_role == "student" %}
+          <a href="/session/" class="btn btn-success btn-lg">I'm Still Here</a>
+          <button
+            type="button"
+            class="btn btn-outline-light btn-lg"
+            data-confirm-url="/session/release/"
+            data-confirm-title="Release your seat?"
+            data-confirm-message="This will end your current desk session."
+            data-confirm-button="Release Seat"
+            data-confirm-button-class="btn-warning"
+          >
+            Release My Seat
+          </button>
+        {% else %}
+          <a href="/desk/{{ desk.number }}/" class="btn btn-success btn-lg">I'm Still Here</a>
+          <button
+            type="button"
+            class="btn btn-outline-light btn-lg"
+            data-confirm-url="/desk/{{ desk.number }}/checkout/"
+            data-confirm-title="Release desk {{ desk.number }}?"
+            data-confirm-message="The desk will become available to students again."
+            data-confirm-button="Release Desk"
+            data-confirm-button-class="btn-warning"
+          >
+            Release Desk
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %} - QR Codes{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <div class="text-uppercase small text-secondary mb-1">Librarian Tools</div>
+    <h2 class="h3 fw-bold mb-0">Desk QR Codes</h2>
+    <p class="muted-copy small mb-0">
+      Print this page and place each QR sticker on the corresponding desk.
+      Students scan the code to check in directly — no map browsing needed.
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-success" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Print Page
+    </button>
+    <a href="/librarian/" class="btn btn-soft">Back to Dashboard</a>
+  </div>
+</div>
+
+<div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4" id="qrGrid">
+  {% for desk in desks %}
+  <div class="col qr-item">
+    <div class="surface rounded-4 p-4 text-center h-100 d-flex flex-column align-items-center gap-3">
+      <div class="fw-bold fs-5">{{ desk.number }}</div>
+      <img src="/qr/{{ desk.number }}/"
+           alt="QR code for {{ desk.number }}"
+           width="160" height="160"
+           class="rounded-3"
+           style="image-rendering:pixelated;">
+      <div class="muted-copy small">
+        Scan to check in<br>
+        <code class="small">{{ host }}/checkin/{{ desk.number }}/</code>
+      </div>
+      <span class="badge rounded-pill px-3
+        {% if desk.status == 'available' %}bg-success
+        {% elif desk.status == 'occupied' %}bg-danger
+        {% elif desk.status == 'away' %}bg-warning text-dark
+        {% else %}bg-secondary{% endif %}">
+        {{ desk.status|title }}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<style>
+  @media print {
+    .site-navbar, .d-flex.justify-content-between, button, a.btn { display: none !important; }
+    body { background: #fff !important; color: #000 !important; }
+    .surface { background: #fff !important; border: 1px solid #ccc !important; }
+    .muted-copy, .text-secondary { color: #444 !important; }
+    #qrGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .qr-item { break-inside: avoid; }
+  }
+</style>
+{% endblock %}

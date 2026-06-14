@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %} - Your Session{% endblock %}
+{% block content %}
+
+{% if desk_released %}
+<!-- Desk was released/abandoned while watching -->
+<div class="row justify-content-center mt-4">
+  <div class="col-lg-6 text-center">
+    <div class="surface rounded-4 p-5">
+      <i class="bi bi-door-open-fill text-warning" style="font-size:3rem;"></i>
+      <h3 class="mt-3 mb-2">Your desk has been released</h3>
+      {% if desk.notice %}
+        <div class="alert alert-warning my-4 text-start">
+          <i class="bi bi-info-circle-fill me-2"></i>{{ desk.notice }}
+        </div>
+      {% endif %}
+      <p class="muted-copy mb-4">The librarian or the system has freed your desk. Head back to pick a new seat.</p>
+      <a href="/student/" class="btn btn-warning btn-lg">Back to All Seats</a>
+    </div>
+  </div>
+</div>
+{% else %}
+
+<div class="row g-4">
+  <!-- Left panel: seat info + clock -->
+  <div class="col-lg-4">
+    <div class="surface rounded-4 p-4 h-100 d-flex flex-column gap-3">
+      <div>
+        <div class="text-uppercase small text-secondary mb-1">Your Seat</div>
+        <h2 class="display-6 fw-bold mb-2">Desk {{ desk.number }}</h2>
+        {% if desk.status == "away" %}
+          <div class="badge bg-warning text-dark px-3 py-2 rounded-pill mb-3">Away</div>
+        {% elif desk.status == "abandoned" %}
+          <div class="badge bg-secondary px-3 py-2 rounded-pill mb-3">Abandoned</div>
+        {% else %}
+          <div class="badge bg-danger px-3 py-2 rounded-pill mb-3">Occupied</div>
+        {% endif %}
+      </div>
+
+      <!-- Session started -->
+      <div class="p-3 rounded-4 bg-dark bg-opacity-25 border border-secondary-subtle">
+        <div class="small text-secondary text-uppercase mb-1">Session Started</div>
+        <div class="fs-5 fw-semibold">{{ session_started_at }}</div>
+      </div>
+
+      <!-- Live elapsed -->
+      <div class="p-3 rounded-4 bg-dark bg-opacity-25 border border-secondary-subtle">
+        <div class="small text-secondary text-uppercase mb-1">Elapsed</div>
+        <div class="fs-4 fw-semibold font-monospace" id="liveElapsed">{{ elapsed_time }}</div>
+      </div>
+
+      {% if on_break %}
+      <div class="p-3 rounded-4 border"
+           style="background:rgba(255,193,7,0.1);border-color:rgba(255,193,7,0.3)!important;">
+        <div class="small text-uppercase mb-1" style="color:#ffc107;">Away Time Left</div>
+        <div class="fs-4 fw-semibold font-monospace text-warning" id="liveAway">{{ break_remaining }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right panel: controls -->
+  <div class="col-lg-8">
+    <div class="surface rounded-4 p-4 p-lg-5 h-100 d-flex flex-column gap-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h3 class="h2 fw-bold mb-0">Session Controls</h3>
+        <span class="badge rounded-pill px-3 py-2
+          {% if desk.status == 'away' %}bg-warning text-dark
+          {% elif desk.status == 'abandoned' %}bg-secondary
+          {% else %}bg-info text-dark{% endif %}">
+          {{ desk.status|title }}
+        </span>
+      </div>
+
+      <!-- Dynamic notice area (updated by JS) -->
+      <div id="noticeArea">
+        {% if desk_notice_kind == "warning" %}
+          <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" id="warningBanner">
+            <div>
+              <div class="fw-semibold mb-1"><i class="bi bi-bell-fill me-2"></i>Still here?</div>
+              <div class="small">Please confirm your presence within the next 10 minutes or your desk will be freed.</div>
+            </div>
+            <form method="post" action="/session/confirm-presence/" class="m-0 flex-shrink-0">
+              {% csrf_token %}
+              <button class="btn btn-dark btn-lg px-4" type="submit">I'm Still Here</button>
+            </form>
+          </div>
+        {% elif desk_notice and desk_notice_kind != "verified" %}
+          <div class="alert alert-info">{{ desk_notice }}</div>
+        {% endif %}
+      </div>
+
+      <!-- 10-min warning banner (shown/hidden by JS when server pushes warning) -->
+      <div id="tenMinWarning" class="d-none">
+        <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div>
+            <div class="fw-semibold"><i class="bi bi-hourglass-split me-2"></i>Only 10 minutes left</div>
+            <div class="small">Extend your session now if you're still using this desk.</div>
+          </div>
+          <form method="post" action="/session/extend/" class="m-0 flex-shrink-0">
+            {% csrf_token %}
+            <button class="btn btn-dark btn-lg px-4" type="submit">Extend Session</button>
+          </form>
+        </div>
+      </div>
+
+      {% if on_break %}
+        <!-- Standard break banner -->
+        <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 {% if show_away_warning %}d-none{% endif %}" id="standardAwayBanner">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-clock-history fs-4 flex-shrink-0"></i>
+            <div>
+              <strong>You're on a break.</strong>
+              {% if break_end_time %}Return by {{ break_end_time }}.{% endif %}
+              Away time left: <span id="awayText">{{ break_remaining }}</span>
+            </div>
+          </div>
+          <form method="post" action="{% url 'end-break' %}" class="m-0 flex-shrink-0">
+            {% csrf_token %}
+            <button class="btn btn-dark btn-lg px-4" type="submit">End Break Early</button>
+          </form>
+        </div>
+
+        <!-- 1-minute warning banner -->
+        <div class="alert alert-danger d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 {% if not show_away_warning %}d-none{% endif %}" id="awayWarningBanner" style="background-color: #dc3545; border-color: #dc3545;">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0 text-white"></i>
+            <div>
+              <strong class="text-white">Still away? Action required!</strong>
+              <div class="small text-white-50">Your break has expired. Confirm presence in the next <span id="awayWarningText" class="fw-bold text-white font-monospace">{{ away_warning_seconds }}s</span> or your desk will be released.</div>
+            </div>
+          </div>
+          <form method="post" action="{% url 'end-break' %}" class="m-0 flex-shrink-0">
+            {% csrf_token %}
+            <button class="btn btn-light btn-lg px-4 fw-bold" type="submit">I'm Still Here</button>
+          </form>
+        </div>
+      {% endif %}
+
+      <!-- Break + Release controls -->
+      <div class="row g-3 mt-auto">
+        <div class="col-lg-7">
+          <div class="p-4 rounded-4 bg-dark bg-opacity-25 border border-secondary-subtle h-100">
+            <h4 class="h5 mb-3">Take a Break (max {{ max_away_minutes|default:20 }} min)</h4>
+            {% if on_break %}
+              <div class="alert alert-secondary mb-0 py-3">
+                <i class="bi bi-info-circle me-2"></i>You are currently on a break. End your break to start a new one.
+              </div>
+            {% else %}
+              <form method="post" action="/session/break/" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-8">
+                  <label class="form-label">Duration (minutes)</label>
+                  <input name="break_minutes" type="number" min="1" max="{{ max_away_minutes|default:20 }}"
+                         class="form-control form-control-lg" placeholder="10" required>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <button class="btn btn-warning btn-lg w-100" type="submit">Start</button>
+                </div>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="p-4 rounded-4 bg-dark bg-opacity-25 border border-secondary-subtle h-100 d-flex flex-column gap-3">
+            <div>
+              <div class="fw-semibold mb-1">End Session</div>
+              <div class="muted-copy small">Release this seat for other students.</div>
+            </div>
+            <div class="d-grid gap-2 mt-auto">
+              <button type="button" class="btn btn-outline-light btn-lg"
+                      data-confirm-url="/session/release/"
+                      data-confirm-title="Release your seat?"
+                      data-confirm-message="This will make Desk {{ desk.number }} available to other students."
+                      data-confirm-button="Release Seat"
+                      data-confirm-button-class="btn-warning">
+                Release My Seat
+              </button>
+              <a href="/student/" class="btn btn-soft btn-lg">Back to Map</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if show_verified_toast %}
+<div id="presenceVerifiedAlert" class="alert d-flex align-items-center gap-3 shadow-lg"
+     style="position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 1050; width: 90%; max-width: 450px; background: rgba(25, 135, 84, 0.95); border: 1px solid rgba(25, 135, 84, 0.4); color: #fff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+  <i class="bi bi-patch-check-fill fs-4 flex-shrink-0" style="color: #4ade80 !important;"></i>
+  <div>
+    <div class="fw-semibold text-white">Presence verified</div>
+    <div class="small text-white-50">{{ desk_notice|default:"Presence confirmed. ✓" }}</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Live clock script ──────────────────────────────────────────────── -->
+<script>
+(function () {
+  // Bootstrap values from server render (avoids a blank first second)
+  let elapsed  = Number("{{ elapsed_seconds_init|default:0 }}");
+  let remaining = Number("{{ remaining_seconds_init|default:7200 }}");
+  let awayRemaining = Number("{{ away_remaining_seconds_init|default:0 }}");
+  let onBreak = "{{ on_break }}" === "True";
+  let showAwayWarningActive = "{{ show_away_warning }}" === "True";
+  let awayWarningSeconds = Number("{{ away_warning_seconds|default:0 }}");
+  const SESSION_TOTAL = 7200; // 2 hours
+
+  const elapsedEl   = document.getElementById('liveElapsed');
+  const remainEl    = document.getElementById('liveRemaining');
+  const progressBar = document.getElementById('progressBar');
+  const tenMinEl    = document.getElementById('tenMinWarning');
+  const awayEl      = document.getElementById('liveAway');
+  const awayTextEl  = document.getElementById('awayText');
+
+  function fmt(secs) {
+    secs = Math.max(0, secs);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return h + 'h ' + String(m).padStart(2,'0') + 'm';
+    return m + 'm ' + String(s).padStart(2,'0') + 's';
+  }
+
+  function updateUI() {
+    if (elapsedEl)  elapsedEl.textContent  = fmt(elapsed);
+    if (remainEl)   remainEl.textContent   = fmt(remaining);
+    
+    if (showAwayWarningActive) {
+      if (awayEl) {
+        awayEl.textContent = '0m 00s';
+        awayEl.className = 'fs-4 fw-semibold font-monospace text-danger animate-pulse';
+      }
+      const awayWarningText = document.getElementById('awayWarningText');
+      if (awayWarningText) awayWarningText.textContent = awayWarningSeconds + 's';
+    } else {
+      if (awayEl) {
+        awayEl.textContent = fmt(awayRemaining);
+        awayEl.className = 'fs-4 fw-semibold font-monospace text-warning';
+      }
+      if (awayTextEl) awayTextEl.textContent = fmt(awayRemaining);
+    }
+
+    // Progress bar
+    if (progressBar) {
+      const pct = Math.max(0, Math.min(100, (remaining / SESSION_TOTAL) * 100));
+      progressBar.style.width = pct + '%';
+      if (remaining <= 600) {
+        progressBar.style.background = 'linear-gradient(90deg,#dc3545,#ff6b6b)';
+      } else if (remaining <= 1200) {
+        progressBar.style.background = 'linear-gradient(90deg,#fd7e14,#ffc107)';
+      } else {
+        progressBar.style.background = 'linear-gradient(90deg,#198754,#48bb78)';
+      }
+    }
+
+    // 10-min warning (only if server hasn't pushed a manual check)
+    const noticeArea = document.getElementById('noticeArea');
+    const hasServerNotice = noticeArea && noticeArea.innerHTML.trim() !== '';
+    if (tenMinEl) {
+      tenMinEl.classList.toggle('d-none', remaining > 600 || hasServerNotice);
+    }
+  }
+
+  // Tick locally every second
+  const localTick = setInterval(function () {
+    elapsed++;
+    remaining = Math.max(0, remaining - 1);
+    
+    if (awayRemaining > 0) {
+      awayRemaining--;
+      updateUI();
+    } else if (onBreak) {
+      if (awayWarningSeconds === 0 && !showAwayWarningActive) {
+        showAwayWarningActive = true;
+        awayWarningSeconds = 60;
+        
+        // Toggle banners visibility
+        const standardAwayBanner = document.getElementById('standardAwayBanner');
+        const awayWarningBanner = document.getElementById('awayWarningBanner');
+        if (standardAwayBanner) standardAwayBanner.classList.add('d-none');
+        if (awayWarningBanner) awayWarningBanner.classList.remove('d-none');
+      }
+
+      if (awayWarningSeconds > 0) {
+        awayWarningSeconds--;
+        updateUI();
+        
+        if (awayWarningSeconds <= 0) {
+          clearInterval(localTick);
+          window.location.reload();
+        }
+      }
+    } else {
+      updateUI();
+    }
+  }, 1000);
+
+  updateUI();
+
+  // Poll server every 15 s to stay in sync + detect notice changes
+  function pollServer() {
+    fetch('/api/session/', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : null)
+      .then(function (data) {
+        if (!data || !data.assigned) {
+          // Desk was released — reload to trigger the "released" template branch
+          clearInterval(localTick);
+          window.location.reload();
+          return;
+        }
+
+        // Sync timers from authoritative server values
+        elapsed       = data.elapsed_seconds;
+        remaining     = data.remaining_seconds;
+        awayRemaining = data.away_remaining_seconds || 0;
+
+        if (data.away_warning_seconds > 0) {
+          if (!showAwayWarningActive) {
+            showAwayWarningActive = true;
+            const standardAwayBanner = document.getElementById('standardAwayBanner');
+            const awayWarningBanner = document.getElementById('awayWarningBanner');
+            if (standardAwayBanner) standardAwayBanner.classList.add('d-none');
+            if (awayWarningBanner) awayWarningBanner.classList.remove('d-none');
+          }
+          awayWarningSeconds = data.away_warning_seconds;
+        }
+        updateUI();
+
+        // Handle notice_kind changes
+        if (data.status === 'abandoned') {
+          clearInterval(localTick);
+          window.location.reload();
+          return;
+        }
+
+        if (data.notice_kind === 'warning') {
+          const banner = document.getElementById('warningBanner');
+          if (!banner) {
+            // Server pushed a new warning — reload to show the confirm button
+            window.location.reload();
+          }
+        }
+      })
+      .catch(function () { /* network hiccup — keep local tick */ });
+  }
+
+  // Disappear the "Presence verified" alert after 5 seconds
+  const verifiedAlert = document.getElementById('presenceVerifiedAlert');
+  if (verifiedAlert) {
+    setTimeout(function () {
+      verifiedAlert.style.transition = 'opacity 500ms ease';
+      verifiedAlert.style.opacity = '0';
+      setTimeout(function () {
+        verifiedAlert.style.display = 'none';
+      }, 500);
+    }, 5000);
+  }
+
+  setInterval(pollServer, 15000);
+})();
+</script>
+{% endif %}
+{% endblock %}

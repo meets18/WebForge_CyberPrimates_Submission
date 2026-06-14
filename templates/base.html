@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ site_name }}{% block title %}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+      /* ── Google Fonts ── */
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+      :root {
+        --page-bg-1: #030712;
+        --page-bg-2: #060d1e;
+        --page-bg-3: #040b18;
+        --shell-bg: rgba(4, 10, 22, 0.70);
+        --panel-bg: rgba(255, 255, 255, 0.06);
+        --surface-bg: rgba(255, 255, 255, 0.07);
+        --border-soft: rgba(255, 255, 255, 0.12);
+        --border-glow: rgba(99, 179, 237, 0.20);
+        --text-main: #eef3fb;
+        --text-soft: #94a3b8;
+        --muted-panel: rgba(255, 255, 255, 0.08);
+        --input-bg: rgba(255, 255, 255, 0.92);
+        --input-text: #0f172a;
+        --input-border: rgba(15, 23, 42, 0.10);
+        --desk-shadow: 0 32px 96px rgba(0, 0, 0, 0.55);
+        --glass-blur: 24px;
+        --glass-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.10);
+        --glow-green: rgba(72, 187, 120, 0.22);
+        --glow-amber: rgba(251, 191, 36, 0.18);
+        --glow-blue: rgba(99, 179, 237, 0.16);
+        --accent: #63b3ed;
+      }
+
+      html[data-theme="light"] {
+        --page-bg-1: #eef2ff;
+        --page-bg-2: #e0e7ff;
+        --page-bg-3: #ddd6fe;
+        --shell-bg: rgba(255, 255, 255, 0.72);
+        --panel-bg: rgba(255, 255, 255, 0.80);
+        --surface-bg: rgba(255, 255, 255, 0.75);
+        --border-soft: rgba(109, 86, 166, 0.18);
+        --border-glow: rgba(109, 86, 166, 0.25);
+        --text-main: #1e1b4b;
+        --text-soft: #6d56a6;
+        --muted-panel: rgba(109, 86, 166, 0.10);
+        --input-bg: rgba(255,255,255,0.95);
+        --input-text: #1e1b4b;
+        --input-border: rgba(109, 86, 166, 0.22);
+        --desk-shadow: 0 18px 50px rgba(80, 60, 140, 0.14);
+        --glass-shadow: 0 8px 32px rgba(80,60,140,0.14), inset 0 1px 0 rgba(255,255,255,0.80);
+        --glow-green: rgba(52, 211, 153, 0.18);
+        --glow-amber: rgba(251, 191, 36, 0.16);
+        --glow-blue: rgba(109, 86, 166, 0.16);
+        --accent: #7c3aed;
+        --btn-soft-bg: rgba(255,255,255,0.85);
+        --btn-soft-border: rgba(109, 86, 166, 0.30);
+        --btn-soft-color: #3b2d6e;
+        --btn-soft-hover-bg: rgba(237,233,246,0.95);
+        --btn-soft-hover-color: #2d1f5e;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background:
+          radial-gradient(ellipse 80% 50% at 10% 5%, rgba(72, 187, 120, 0.20), transparent),
+          radial-gradient(ellipse 60% 40% at 90% 10%, rgba(251, 191, 36, 0.18), transparent),
+          radial-gradient(ellipse 50% 60% at 50% 100%, rgba(99, 179, 237, 0.14), transparent),
+          linear-gradient(180deg, var(--page-bg-1) 0%, var(--page-bg-2) 55%, var(--page-bg-3) 100%);
+        color: var(--text-main);
+        transition: background 300ms ease, color 300ms ease;
+        overflow-x: hidden;
+      }
+
+      /* Ambient floating glow orbs */
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+        filter: blur(80px);
+      }
+      body::before {
+        width: 500px;
+        height: 500px;
+        top: -100px;
+        left: -100px;
+        background: radial-gradient(circle, rgba(72,187,120,0.12), transparent 70%);
+        animation: orb-drift-1 18s ease-in-out infinite alternate;
+      }
+      body::after {
+        width: 400px;
+        height: 400px;
+        bottom: -80px;
+        right: -80px;
+        background: radial-gradient(circle, rgba(99,179,237,0.12), transparent 70%);
+        animation: orb-drift-2 22s ease-in-out infinite alternate;
+      }
+      @keyframes orb-drift-1 {
+        from { transform: translate(0, 0) scale(1); }
+        to   { transform: translate(60px, 40px) scale(1.15); }
+      }
+      @keyframes orb-drift-2 {
+        from { transform: translate(0, 0) scale(1.1); }
+        to   { transform: translate(-50px, -30px) scale(0.95); }
+      }
+
+      /* Light mode: lavender orbs */
+      [data-theme="light"] body {
+        background:
+          radial-gradient(ellipse 70% 50% at 15% 5%, rgba(167, 139, 250, 0.28), transparent),
+          radial-gradient(ellipse 55% 40% at 85% 10%, rgba(196, 181, 253, 0.22), transparent),
+          radial-gradient(ellipse 50% 60% at 50% 100%, rgba(139, 92, 246, 0.12), transparent),
+          linear-gradient(160deg, var(--page-bg-1) 0%, var(--page-bg-2) 50%, var(--page-bg-3) 100%);
+      }
+      [data-theme="light"] body::before {
+        background: radial-gradient(circle, rgba(139,92,246,0.14), transparent 70%);
+      }
+      [data-theme="light"] body::after {
+        background: radial-gradient(circle, rgba(196,181,253,0.16), transparent 70%);
+      }
+
+      /* Ensure page content sits above orbs */
+      .site-navbar, .page-content, main, .container, .container-fluid {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ── Navbar (sticky frosted-glass bar) ── */
+      .site-navbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        width: 100%;
+        background: var(--shell-bg);
+        border-bottom: 1px solid var(--border-soft);
+        backdrop-filter: blur(32px) saturate(180%);
+        -webkit-backdrop-filter: blur(32px) saturate(180%);
+        padding: 0.65rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.25);
+      }
+
+      .site-brand {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+        text-decoration: none;
+      }
+      .site-brand-name {
+        font-size: 1.55rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--text-main);
+      }
+      .site-brand-tag {
+        font-size: 0.72rem;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-soft);
+        opacity: 0.85;
+      }
+
+      /* ── Profile avatar chip ── */
+      .profile-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        cursor: pointer;
+        padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-soft);
+        background: var(--muted-panel);
+        transition: background 150ms ease, border-color 150ms ease;
+        text-decoration: none;
+        color: var(--text-main);
+      }
+      .profile-chip:hover { background: rgba(255,255,255,0.12); color: var(--text-main); }
+      [data-theme="light"] .profile-chip:hover { background: #f0ecfc; border-color: rgba(109,86,166,0.35); }
+      .profile-avatar {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.55rem;        /* icon size */
+        line-height: 1;
+        color: var(--text-main);
+        opacity: 0.85;
+      }
+      [data-theme="light"] .profile-avatar { opacity: 0.75; }
+      .profile-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .profile-role {
+        font-size: 0.72rem;
+        color: var(--text-soft);
+        line-height: 1;
+      }
+
+      /* ── Full-screen content area ── */
+      .page-content {
+        min-height: calc(100vh - 56px);
+        padding: 1.75rem 1.5rem;
+      }
+
+      /* ── Modal: stronger backdrop blur ── */
+      .modal-backdrop {
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        background-color: rgba(0, 0, 0, 0.60) !important;
+      }
+      .confirm-modal .modal-dialog {
+        max-width: 440px;
+      }
+      /* Fully opaque modal card — no content bleed-through */
+      .confirm-modal .modal-content {
+        border-radius: 1rem;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+        background: #0e1829;          /* solid dark — no alpha */
+        border: 1px solid rgba(255,255,255,0.10);
+        color: var(--text-main);
+        backdrop-filter: none;
+      }
+      .confirm-modal .modal-header { padding: 1.5rem 1.5rem 0.5rem; }
+      .confirm-modal .modal-body  { padding: 0.75rem 1.5rem 1.5rem; }
+      .confirm-modal .modal-title { font-size: 1.2rem; }
+
+      [data-theme="light"] .confirm-modal .modal-content {
+        background: #ffffff;          /* solid white in light mode */
+        border: 1px solid rgba(109,86,166,0.18);
+        box-shadow: 0 32px 80px rgba(80,60,140,0.22);
+        color: #1a1333;
+      }
+
+      .muted-copy { color: var(--text-soft); }
+      .desk-card {
+        transition: transform 220ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 220ms ease, filter 220ms ease, border-color 220ms ease;
+        border: 1px solid rgba(255,255,255,0.14);
+        min-height: 126px;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .desk-card:hover {
+        transform: translateY(-6px) scale(1.01);
+        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255,255,255,0.18);
+        filter: brightness(1.06);
+        border-color: rgba(255,255,255,0.28);
+      }
+      .desk-card code {
+        color: inherit;
+        background: rgba(0, 0, 0, 0.15);
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        font-family: var(--bs-font-monospace);
+      }
+      [data-theme="light"] .desk-card code {
+        background: rgba(0, 0, 0, 0.06);
+      }
+      .status-pill {
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+      }
+      .soft-border { border-color: rgba(255,255,255,0.10) !important; }
+
+      /* ── Core glassmorphism surface ── */
+      .surface {
+        background: var(--surface-bg);
+        border: 1px solid var(--border-soft);
+        backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+        box-shadow: var(--glass-shadow);
+        transition: box-shadow 200ms ease, border-color 200ms ease;
+      }
+      .surface:hover {
+        border-color: var(--border-glow);
+        box-shadow: 0 12px 48px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.14);
+      }
+      .auth-chip {
+        background: var(--muted-panel);
+        border: 1px solid var(--border-soft);
+        color: var(--text-main);
+      }
+
+      .btn-soft {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.14);
+        color: var(--text-main);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: background 180ms ease, border-color 180ms ease, transform 160ms ease, box-shadow 180ms ease;
+      }
+
+      .btn-soft:hover,
+      .btn-soft:focus {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255,255,255,0.28);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.24);
+      }
+
+      /* Light mode: btn-soft gets a crisp white card look with purple border */
+      [data-theme="light"] .btn-soft {
+        background: var(--btn-soft-bg, #ffffff);
+        border: 1px solid var(--btn-soft-border, rgba(109, 86, 166, 0.30));
+        color: var(--btn-soft-color, #3b2d6e);
+        font-weight: 500;
+      }
+
+      [data-theme="light"] .btn-soft:hover,
+      [data-theme="light"] .btn-soft:focus {
+        background: var(--btn-soft-hover-bg, #f0ecfc);
+        color: var(--btn-soft-hover-color, #2d1f5e);
+        border-color: rgba(109, 86, 166, 0.50);
+      }
+
+      .modal-content {
+        background: var(--shell-bg);
+        border: 1px solid var(--border-soft);
+        color: var(--text-main);
+      }
+
+      .form-control,
+      .form-select {
+        background-color: var(--input-bg);
+        color: var(--input-text);
+        border-color: var(--input-border);
+      }
+
+      .form-control::placeholder {
+        color: color-mix(in srgb, var(--input-text) 50%, transparent);
+      }
+
+      .page-enter {
+        animation: pageEnter 220ms ease-out both;
+      }
+
+      @keyframes pageEnter {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ── Shimmer animation for glass cards ── */
+      @keyframes shimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position:  200% center; }
+      }
+      .surface-shimmer::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%);
+        background-size: 200% 100%;
+        animation: shimmer 3.5s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      /* ── Glowing focus ring on inputs ── */
+      .form-control:focus,
+      .form-select:focus {
+        box-shadow: 0 0 0 3px rgba(99,179,237,0.25), 0 1px 4px rgba(0,0,0,0.15);
+        border-color: rgba(99,179,237,0.50);
+        outline: none;
+      }
+      [data-theme="light"] .form-control:focus,
+      [data-theme="light"] .form-select:focus {
+        box-shadow: 0 0 0 3px rgba(109,86,166,0.20), 0 1px 4px rgba(80,60,140,0.10);
+        border-color: rgba(109,86,166,0.45);
+      }
+
+      .splash-enter {
+        animation: splashEnter 520ms ease-out both;
+      }
+
+      @keyframes splashEnter {
+        from { opacity: 0; transform: translateY(18px) scale(0.99); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      /* ── Light-mode component overrides ──────────────────────── */
+
+      /* btn-outline-light → visible purple-bordered button */
+      [data-theme="light"] .btn-outline-light {
+        color: #3b2d6e;
+        background: #ffffff;
+        border-color: rgba(109, 86, 166, 0.35);
+        font-weight: 500;
+      }
+      [data-theme="light"] .btn-outline-light:hover,
+      [data-theme="light"] .btn-outline-light:focus {
+        background: #f0ecfc;
+        color: #2d1f5e;
+        border-color: rgba(109, 86, 166, 0.60);
+      }
+
+      /* btn-outline-danger stays legible */
+      [data-theme="light"] .btn-outline-danger {
+        background: #fff0f0;
+        border-color: rgba(220, 53, 69, 0.45);
+        color: #c0122a;
+        font-weight: 500;
+      }
+      [data-theme="light"] .btn-outline-danger:hover,
+      [data-theme="light"] .btn-outline-danger:focus {
+        background: #ffe0e3;
+        border-color: #dc3545;
+        color: #9b0e20;
+      }
+
+      /* auth-chip (logged-in user badge) */
+      [data-theme="light"] .auth-chip {
+        background: #ede9f6;
+        border: 1px solid rgba(109, 86, 166, 0.25);
+        color: #3b2d6e;
+      }
+
+      /* soft-border line separator */
+      [data-theme="light"] .soft-border {
+        border-color: rgba(109, 86, 166, 0.15) !important;
+      }
+
+      [data-theme="light"] .text-secondary,
+      [data-theme="light"] .text-secondary * {
+        color: #5b4e7a !important;
+      }
+
+      [data-theme="light"] .bg-dark.bg-opacity-25 {
+        background-color: rgba(109, 86, 166, 0.06) !important;
+      }
+
+      [data-theme="light"] .bg-dark {
+        background-color: #1a1333 !important;
+      }
+
+      [data-theme="light"] .border-secondary-subtle {
+        border-color: rgba(109, 86, 166, 0.16) !important;
+      }
+
+      [data-theme="light"] .bg-opacity-25 {
+        --bs-bg-opacity: 1;
+      }
+
+      /* Modal styling in light mode */
+      [data-theme="light"] .modal-content {
+        background: rgba(255, 255, 255, 0.97);
+        border: 1px solid rgba(109, 86, 166, 0.18);
+        box-shadow: 0 20px 60px rgba(80, 60, 140, 0.15);
+      }
+
+      /* surface panels */
+      [data-theme="light"] .surface {
+        background: rgba(255, 255, 255, 0.85);
+        border-color: rgba(109, 86, 166, 0.14);
+      }
+
+      [data-theme="light"] .profile-chip {
+        background: rgba(109,86,166,0.08);
+        border-color: rgba(109,86,166,0.20);
+      }
+      @keyframes pulse-glow {
+        0%, 100% {
+          opacity: 1;
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(220,53,69,0);
+        }
+        50% {
+          opacity: 0.88;
+          transform: scale(0.99);
+          box-shadow: 0 0 12px 4px rgba(220,53,69,0.30);
+        }
+      }
+      .animate-pulse {
+        animation: pulse-glow 2.0s infinite ease-in-out;
+      }
+
+      /* ── Glass badge variant ── */
+      .glass-badge {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.20);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+      }
+
+      /* ── Improved alert glass style ── */
+      .alert {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-width: 1px;
+      }
+      .alert-warning {
+        background: rgba(251,191,36,0.15) !important;
+        border-color: rgba(251,191,36,0.30) !important;
+        color: #fde68a !important;
+      }
+      .alert-danger {
+        background: rgba(220,53,69,0.18) !important;
+        border-color: rgba(220,53,69,0.35) !important;
+        color: #fca5a5 !important;
+      }
+      .alert-info {
+        background: rgba(99,179,237,0.14) !important;
+        border-color: rgba(99,179,237,0.28) !important;
+        color: #bae6fd !important;
+      }
+      [data-theme="light"] .alert-warning {
+        background: rgba(251,191,36,0.12) !important;
+        border-color: rgba(217,119,6,0.30) !important;
+        color: #92400e !important;
+      }
+      [data-theme="light"] .alert-danger {
+        background: rgba(220,53,69,0.10) !important;
+        border-color: rgba(220,53,69,0.30) !important;
+        color: #991b1b !important;
+      }
+      [data-theme="light"] .alert-info {
+        background: rgba(99,179,237,0.10) !important;
+        border-color: rgba(59,130,246,0.25) !important;
+        color: #1e40af !important;
+      }
+    </style>
+    <script>
+      (function () {
+        const saved = localStorage.getItem("deskguard-theme");
+        const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme = saved || (prefersLight ? "light" : "dark");
+      })();
+    </script>
+  </head>
+  <body>
+    {% if not hide_chrome %}
+      <!-- ── Sticky Navbar ── -->
+      <nav class="site-navbar page-enter">
+        <!-- Brand -->
+        <a href="/" class="site-brand">
+          <span class="site-brand-name">DeskGuard</span>
+          <span class="site-brand-tag">{% block headline %}Library Seat Booking{% endblock %}</span>
+        </a>
+
+        <!-- Right-side controls: theme toggle then profile, both pinned to far right -->
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <!-- Theme toggle -->
+          <button type="button" class="btn btn-soft btn-sm" id="themeToggle" aria-label="Toggle theme">
+            <i class="bi bi-moon-stars me-1"></i><span id="themeToggleLabel">Dark</span>
+          </button>
+
+          {% if request.session.deskguard_user %}
+            <!-- Profile dropdown -->
+            <div class="dropdown">
+              <button class="profile-chip border-0" type="button" id="profileDropdown"
+                      data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="profile-avatar">
+                  <i class="bi bi-person-circle"></i>
+                </div>
+                <div>
+                  <div class="profile-name">{{ request.session.deskguard_user.name }}</div>
+                  <div class="profile-role">{{ request.session.deskguard_user.role|title }}</div>
+                </div>
+                <i class="bi bi-chevron-down ms-1" style="font-size:0.7rem;opacity:0.6;"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end mt-1 shadow" aria-labelledby="profileDropdown"
+                  style="background:var(--shell-bg);border-color:var(--border-soft);color:var(--text-main);min-width:160px;">
+                {% if request.session.deskguard_user.role == "student" %}
+                  <li>
+                    <a class="dropdown-item" href="/student/"
+                       style="color:var(--text-main);">Student Portal</a>
+                  </li>
+                  <li><hr class="dropdown-divider" style="border-color:var(--border-soft);"></li>
+                {% endif %}
+                <li>
+                  <a class="dropdown-item text-danger" href="/logout/">Logout</a>
+                </li>
+              </ul>
+            </div>
+          {% endif %}
+        </div>
+      </nav>
+
+      <!-- ── Full-width page content ── -->
+      <main class="page-content page-enter">
+        {% block content %}{% endblock %}
+      </main>
+
+    {% else %}
+      <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-4 page-enter">
+        <button type="button" class="btn btn-soft position-fixed top-0 end-0 m-3" id="themeToggle" aria-label="Toggle theme">
+          <i class="bi bi-moon-stars me-1"></i><span id="themeToggleLabel">Dark</span>
+        </button>
+        <div class="w-100">
+          {% block content_bare %}{% endblock %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="modal fade confirm-modal" id="confirmActionModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0">
+            <div>
+              <h5 class="modal-title fw-bold mb-1" id="confirmActionTitle">Confirm action</h5>
+              <p class="muted-copy small mb-0" id="confirmActionMessage">Please confirm this action.</p>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                    style="filter: var(--bs-btn-close-filter, none);"></button>
+          </div>
+          <div class="modal-body">
+            <form id="confirmActionForm" method="post" class="m-0">
+              {% csrf_token %}
+              <div class="mb-3" id="reasonFieldContainer" style="display:none;">
+                <label for="releaseReason" class="form-label small text-secondary">Reason for release (optional)</label>
+                <input type="text" name="release_reason" id="releaseReason" class="form-control" placeholder="e.g. Left items unattended">
+              </div>
+              <div class="d-flex justify-content-end gap-2 pt-2">
+                <button type="button" class="btn btn-soft px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-warning px-4" id="confirmActionButton">Confirm</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      (function () {
+        const root = document.documentElement;
+        const themeToggle = document.getElementById("themeToggle");
+        const themeToggleLabel = document.getElementById("themeToggleLabel");
+
+        function applyTheme(theme) {
+          root.dataset.theme = theme;
+          localStorage.setItem("deskguard-theme", theme);
+          if (themeToggleLabel) {
+            themeToggleLabel.textContent = theme === "light" ? "Light" : "Dark";
+          }
+          if (themeToggle) {
+            const icon = themeToggle.querySelector("i");
+            if (icon) {
+              icon.className = theme === "light" ? "bi bi-sun-fill me-1" : "bi bi-moon-stars me-1";
+            }
+          }
+        }
+
+        if (themeToggle) {
+          applyTheme(root.dataset.theme || "dark");
+          themeToggle.addEventListener("click", function () {
+            applyTheme(root.dataset.theme === "light" ? "dark" : "light");
+          });
+        }
+
+        const modalEl = document.getElementById("confirmActionModal");
+        if (!modalEl) {
+          return;
+        }
+
+        const form = document.getElementById("confirmActionForm");
+        const title = document.getElementById("confirmActionTitle");
+        const message = document.getElementById("confirmActionMessage");
+        const button = document.getElementById("confirmActionButton");
+        const modal = new bootstrap.Modal(modalEl, { backdrop: true });
+
+        /* Apply backdrop blur after Bootstrap injects the backdrop element */
+        modalEl.addEventListener("show.bs.modal", function () {
+          requestAnimationFrame(function () {
+            const bd = document.querySelector(".modal-backdrop");
+            if (bd) {
+              bd.style.backdropFilter = "blur(6px)";
+              bd.style.webkitBackdropFilter = "blur(6px)";
+            }
+          });
+        });
+
+        document.addEventListener("click", function (event) {
+          const trigger = event.target.closest("[data-confirm-url]");
+          if (!trigger) {
+            return;
+          }
+
+          event.preventDefault();
+          form.action = trigger.getAttribute("data-confirm-url");
+          title.textContent = trigger.getAttribute("data-confirm-title") || "Confirm action";
+          message.textContent = trigger.getAttribute("data-confirm-message") || "Please confirm this action.";
+          button.textContent = trigger.getAttribute("data-confirm-button") || "Confirm";
+          button.className = "btn " + (trigger.getAttribute("data-confirm-button-class") || "btn-warning");
+
+          const needsReason = trigger.hasAttribute("data-needs-reason");
+          const reasonContainer = document.getElementById("reasonFieldContainer");
+          const reasonInput = document.getElementById("releaseReason");
+          if (reasonContainer && reasonInput) {
+            if (needsReason) {
+              reasonContainer.style.display = "block";
+              reasonInput.value = "";
+            } else {
+              reasonContainer.style.display = "none";
+              reasonInput.value = "";
+            }
+          }
+
+          modal.show();
+        });
+      })();
+    </script>
+  </body>
+</html>
